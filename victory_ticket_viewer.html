@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Victory Ticket Viewer</title>
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+</head>
+<body style="font-family: Arial, sans-serif; padding:20px;">
+  <h2>🎟 Victory Ticket Viewer</h2>
+
+  <button onclick="loadTickets()">Load Tickets</button>
+  <table border="1" cellpadding="8" cellspacing="0" style="margin-top:20px; border-collapse: collapse; width:100%;">
+    <thead>
+      <tr>
+        <th>Created At</th>
+        <th>Total Amount</th>
+        <th>Discount</th>
+        <th>Net Amount</th>
+        <th>Agent</th>
+      </tr>
+    </thead>
+    <tbody id="ticketTable"></tbody>
+  </table>
+
+  <script>
+    // 👉 यहाँ अपना Anon Key डालो
+    const SUPABASE_URL = "https://fddmkluggatikbwovmyo.supabase.co";
+    const SUPABASE_ANON_KEY = "PASTE-YOUR-ANON-KEY-HERE";
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function loadTickets() {
+      const { data, error } = await supabase
+        .from('v_ticket_sales')   // 👈 यह view वही है जो तुमने बनाया है
+        .select('*')
+        .limit(20);
+
+      if (error) {
+        alert("Error: " + error.message);
+        return;
+      }
+
+      let tbody = document.getElementById("ticketTable");
+      tbody.innerHTML = "";
+
+      data.forEach(ticket => {
+        let row = `
+          <tr>
+            <td>${ticket.created_at}</td>
+            <td>${ticket.total_amount}</td>
+            <td>${ticket.discount || 0}</td>
+            <td>${ticket.net_amount || (ticket.total_amount - (ticket.discount || 0))}</td>
+            <td>${ticket.agent_name || "Unassigned"}</td>
+          </tr>
+        `;
+        tbody.innerHTML += row;
+      });
+    }
+  </script>
+</body>
+</html>
