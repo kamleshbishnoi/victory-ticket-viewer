@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Victory Fun Park - Ticket Booking</title>
+</head>
+<body>
+  <h2>🎟 Victory Fun Park Ticket Booking</h2>
+
+  <form id="ticketForm">
+    <label>Customer Name:</label><br>
+    <input type="text" id="customer_name" required><br><br>
+
+    <label>Age:</label><br>
+    <input type="number" id="age" required><br><br>
+
+    <label>Ticket Type:</label><br>
+    <select id="ticket_type" required>
+      <option value="Mini Combo">Mini Combo</option>
+      <option value="Combo">Combo</option>
+    </select><br><br>
+
+    <label>Amount:</label><br>
+    <input type="number" id="amount" required><br><br>
+
+    <label>Payment Mode:</label><br>
+    <select id="payment_mode" required>
+      <option value="UPI">UPI</option>
+      <option value="Card">Card</option>
+      <option value="Cash">Cash</option>
+    </select><br><br>
+
+    <label>Agent Name:</label><br>
+    <input type="text" id="agent_name" required><br><br>
+
+    <button type="submit">Book Ticket</button>
+  </form>
+
+  <p id="message"></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script>
+    // 🔑 अपनी Supabase की details डालो
+    const SUPABASE_URL = "https://fddmxlugqtikhbovomyo.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkZG14bHVncXRpa2hib3ZvbXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0OTM5NjMsImV4cCI6MjA3MTA2OTk2M30.zebrZJ8F30QLvn0a7IARKz5LxgOXyNs5mvPUSegeTxA";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    document.getElementById("ticketForm").addEventListener("submit", async function(e) {
+      e.preventDefault();
+
+      let { data, error } = await supabase
+        .from("tickets")
+        .insert([{
+          customer_name: document.getElementById("customer_name").value,
+          age: document.getElementById("age").value,
+          ticket_type: document.getElementById("ticket_type").value,
+          amount: document.getElementById("amount").value,
+          payment_mode: document.getElementById("payment_mode").value,
+          agent_name: document.getElementById("agent_name").value,
+          branch_code: "JPR"
+        }]);
+
+      if (error) {
+        document.getElementById("message").innerText = "❌ Error: " + error.message;
+      } else {
+        document.getElementById("message").innerText = "✅ Ticket booked successfully!";
+        document.getElementById("ticketForm").reset();
+      }
+    });
+  </script>
+</body>
+</html>
