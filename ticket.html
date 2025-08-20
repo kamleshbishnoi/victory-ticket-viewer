@@ -2,131 +2,109 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Victory Fun Park - Ticket Booking</title>
+  <title>Victory Fun Park Ticket Booking</title>
+  <script src="https://unpkg.com/@supabase/supabase-js"></script>
   <style>
-    body { font-family: Arial, sans-serif; margin: 20px; }
-    label { display: inline-block; width: 120px; margin-bottom: 8px; }
-    input, select { padding: 5px; margin-bottom: 12px; }
-    .success { color: green; }
-    .error { color: red; }
+    body { font-family: Arial; margin: 20px; }
+    h2 { color: darkred; }
+    label { display: block; margin-top: 10px; }
+    input, select { padding: 5px; width: 200px; }
+    .receipt { border: 1px solid #333; margin-top: 20px; padding: 10px; width: 300px; }
   </style>
 </head>
 <body>
-  <h2>🎟 Victory Fun Park Ticket Booking</h2>
+  <h2>🎟️ Victory Fun Park Ticket Booking</h2>
 
-  <form id="ticketForm">
-    <label>Ticket Type:</label>
-    <select id="ticket_type">
-      <option value="Mini Combo" data-rate="300">Mini Combo</option>
-      <option value="Combo" data-rate="500">Combo</option>
-    </select><br>
+  <label>Ticket Type:</label>
+  <select id="ticket_type" onchange="updateRate()">
+    <option value="Mini Combo" data-rate="300">Mini Combo</option>
+    <option value="Combo" data-rate="500">Combo</option>
+  </select>
 
-    <label>Quantity:</label>
-    <input type="number" id="quantity" value="1" min="1"><br>
+  <label>Quantity:</label>
+  <input type="number" id="quantity" value="1" onchange="updateAmount()">
 
-    <label>Rate:</label>
-    <input type="number" id="rate" readonly><br>
+  <label>Rate:</label>
+  <input type="number" id="rate" readonly>
 
-    <label>Amount:</label>
-    <input type="number" id="amount" readonly><br>
+  <label>Amount:</label>
+  <input type="number" id="amount" readonly>
 
-    <label>Discount:</label>
-    <input type="number" id="discount" value="0"><br>
+  <label>Discount:</label>
+  <input type="number" id="discount" value="0" onchange="updateAmount()">
 
-    <label>Payment Mode:</label>
-    <select id="payment_mode">
-      <option value="UPI">UPI</option>
-      <option value="Cash">Cash</option>
-      <option value="Card">Card</option>
-    </select><br>
+  <label>Payment Mode:</label>
+  <select id="payment_mode">
+    <option>Cash</option>
+    <option>UPI</option>
+    <option>Card</option>
+  </select>
 
-    <button type="submit">Book Ticket</button>
-  </form>
+  <br><br>
+  <button onclick="bookTicket()">Book Ticket</button>
 
-  <h3>🧾 Ticket Receipt</h3>
-  <div id="receipt"></div>
+  <div id="receipt" class="receipt" style="display:none;"></div>
 
-  <p id="message"></p>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
-    // ✅ Supabase config
+    // ✅ Supabase Connection
     const SUPABASE_URL = "https://fddmxlugqtikhbovomyo.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkZG14bHVncXRpa2hib3ZvbXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0OTM5NjMsImV4cCI6MjA3MTA2OTk2M30.zebrZJ8F30QLvn0a7IARKz5LxgOXyNs5mvPUSegeTxA";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    const ticketType = document.getElementById("ticket_type");
-    const quantity = document.getElementById("quantity");
-    const rate = document.getElementById("rate");
-    const amount = document.getElementById("amount");
-    const discount = document.getElementById("discount");
+    // ✅ Auto Rate & Amount Calculation
+    function updateRate() {
+      let type = document.getElementById("ticket_type");
+      let rate = type.options[type.selectedIndex].getAttribute("data-rate");
+      document.getElementById("rate").value = rate;
+      updateAmount();
+    }
 
-    // 🔹 Auto update Rate & Amount
     function updateAmount() {
-      const selected = ticketType.options[ticketType.selectedIndex];
-      rate.value = selected.getAttribute("data-rate");
-      amount.value = (rate.value * quantity.value) - discount.value;
+      let qty = parseInt(document.getElementById("quantity").value) || 0;
+      let rate = parseInt(document.getElementById("rate").value) || 0;
+      let discount = parseInt(document.getElementById("discount").value) || 0;
+      document.getElementById("amount").value = (qty * rate) - discount;
     }
 
-    ticketType.addEventListener("change", updateAmount);
-    quantity.addEventListener("input", updateAmount);
-    discount.addEventListener("input", updateAmount);
-    updateAmount();
+    updateRate();
 
-    // 🔹 Generate Ticket Number (YYYYMMDD-HHMMSS format)
-    function generateTicketNo() {
-      const now = new Date();
-      return "T" + now.getFullYear().toString().slice(2) +
-             (now.getMonth()+1).toString().padStart(2,"0") +
-             now.getDate().toString().padStart(2,"0") + "-" +
-             now.getHours().toString().padStart(2,"0") +
-             now.getMinutes().toString().padStart(2,"0") +
-             now.getSeconds().toString().padStart(2,"0");
-    }
+    // ✅ Ticket Booking
+    async function bookTicket() {
+      const ticket_type = document.getElementById("ticket_type").value;
+      const quantity = parseInt(document.getElementById("quantity").value);
+      const rate = parseInt(document.getElementById("rate").value);
+      const discount = parseInt(document.getElementById("discount").value);
+      const amount = parseInt(document.getElementById("amount").value);
+      const payment_mode = document.getElementById("payment_mode").value;
 
-    // 🔹 Form submit
-    document.getElementById("ticketForm").addEventListener("submit", async function(e) {
-      e.preventDefault();
+      // Generate Ticket No & Date
+      let ticket_no = Date.now(); // unique number
+      let date = new Date().toLocaleString();
 
-      const ticketNo = generateTicketNo();
-      const now = new Date().toLocaleString();
-
-      let { data, error } = await supabase
-        .from("tickets")
-        .insert([{
-          ticket_no: ticketNo,
-          date_time: now,
-          ticket_type: ticketType.value,
-          quantity: quantity.value,
-          rate: rate.value,
-          amount: amount.value,
-          discount: discount.value,
-          payment_mode: document.getElementById("payment_mode").value,
-          branch_code: "JPR"
-        }]);
+      // Save to Supabase
+      const { data, error } = await supabase.from("tickets").insert([
+        { ticket_no, ticket_type, quantity, rate, amount, discount, payment_mode, branch_code: "JPR" }
+      ]);
 
       if (error) {
-        document.getElementById("message").innerHTML = "❌ Error: " + error.message;
-        document.getElementById("message").className = "error";
-      } else {
-        document.getElementById("message").innerHTML = "✅ Ticket booked successfully!";
-        document.getElementById("message").className = "success";
-
-        // 🧾 Show receipt
-        document.getElementById("receipt").innerHTML = `
-          <p><b>Ticket No:</b> ${ticketNo}</p>
-          <p><b>Date:</b> ${now}</p>
-          <p><b>Type:</b> ${ticketType.value}</p>
-          <p><b>Quantity:</b> ${quantity.value}</p>
-          <p><b>Rate:</b> ${rate.value}</p>
-          <p><b>Amount:</b> ${amount.value}</p>
-          <p><b>Payment:</b> ${document.getElementById("payment_mode").value}</p>
-        `;
-
-        document.getElementById("ticketForm").reset();
-        updateAmount();
+        alert("❌ Error: " + error.message);
+        return;
       }
-    });
+
+      // Show Receipt
+      document.getElementById("receipt").style.display = "block";
+      document.getElementById("receipt").innerHTML = `
+        <h3>🎟️ Ticket Receipt</h3>
+        <p><b>Ticket No:</b> ${ticket_no}</p>
+        <p><b>Date:</b> ${date}</p>
+        <p><b>Type:</b> ${ticket_type}</p>
+        <p><b>Qty:</b> ${quantity}</p>
+        <p><b>Rate:</b> ${rate}</p>
+        <p><b>Discount:</b> ${discount}</p>
+        <p><b>Amount:</b> ₹${amount}</p>
+        <p><b>Payment:</b> ${payment_mode}</p>
+      `;
+    }
   </script>
 </body>
 </html>
