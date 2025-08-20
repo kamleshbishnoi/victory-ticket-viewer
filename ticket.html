@@ -8,55 +8,69 @@
   <h2>🎟 Victory Fun Park Ticket Booking</h2>
 
   <form id="ticketForm">
-    <label>Customer Name:</label><br>
-    <input type="text" id="customer_name" required><br><br>
-
-    <label>Age:</label><br>
-    <input type="number" id="age" required><br><br>
-
-    <label>Ticket Type:</label><br>
-    <select id="ticket_type" required>
+    <label>Ticket Type:</label>
+    <select id="ticket_type">
       <option value="Mini Combo">Mini Combo</option>
       <option value="Combo">Combo</option>
     </select><br><br>
 
-    <label>Amount:</label><br>
-    <input type="number" id="amount" required><br><br>
+    <label>Quantity:</label>
+    <input type="number" id="quantity"><br><br>
 
-    <label>Payment Mode:</label><br>
-    <select id="payment_mode" required>
+    <label>Rate:</label>
+    <input type="number" id="rate"><br><br>
+
+    <label>Amount:</label>
+    <input type="number" id="amount" readonly><br><br>
+
+    <label>Discount:</label>
+    <input type="number" id="discount"><br><br>
+
+    <label>Payment Mode:</label>
+    <select id="payment_mode">
       <option value="UPI">UPI</option>
-      <option value="Card">Card</option>
       <option value="Cash">Cash</option>
+      <option value="Card">Card</option>
     </select><br><br>
-
-    <label>Agent Name:</label><br>
-    <input type="text" id="agent_name" required><br><br>
 
     <button type="submit">Book Ticket</button>
   </form>
 
   <p id="message"></p>
 
+  <!-- Supabase JS library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
-    // 🔑 अपनी Supabase की details डालो
+    // 🔑 Apni Supabase details daaliye
     const SUPABASE_URL = "https://fddmxlugqtikhbovomyo.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZkZG14bHVncXRpa2hib3ZvbXlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0OTM5NjMsImV4cCI6MjA3MTA2OTk2M30.zebrZJ8F30QLvn0a7IARKz5LxgOXyNs5mvPUSegeTxA";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+    // ✅ Amount = Quantity × Rate - Discount auto calculate
+    document.getElementById("quantity").addEventListener("input", calculateAmount);
+    document.getElementById("rate").addEventListener("input", calculateAmount);
+    document.getElementById("discount").addEventListener("input", calculateAmount);
+
+    function calculateAmount() {
+      const qty = parseInt(document.getElementById("quantity").value) || 0;
+      const rate = parseInt(document.getElementById("rate").value) || 0;
+      const discount = parseInt(document.getElementById("discount").value) || 0;
+      document.getElementById("amount").value = (qty * rate) - discount;
+    }
+
+    // ✅ Form submit
     document.getElementById("ticketForm").addEventListener("submit", async function(e) {
       e.preventDefault();
 
       let { data, error } = await supabase
         .from("tickets")
         .insert([{
-          customer_name: document.getElementById("customer_name").value,
-          age: document.getElementById("age").value,
           ticket_type: document.getElementById("ticket_type").value,
+          quantity: document.getElementById("quantity").value,
+          rate: document.getElementById("rate").value,
           amount: document.getElementById("amount").value,
+          discount: document.getElementById("discount").value,
           payment_mode: document.getElementById("payment_mode").value,
-          agent_name: document.getElementById("agent_name").value,
           branch_code: "JPR"
         }]);
 
